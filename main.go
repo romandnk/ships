@@ -24,16 +24,19 @@ func main() {
 
 	types := [3]string{"bread", "banana", "clothes"}
 
-	wg.Add(6)
+	wg.Add(3)
 	for _, shipType := range types {
 		go func(shipType string) {
-			defer wg.Done()
 			createShips(shipType)
 		}(shipType)
 	}
 
 	go func() {
-		defer wg.Done()
+		wg.Wait()
+		close(tunnel)
+	}()
+
+	go func() {
 		for ship := range breadPier {
 			fmt.Printf("Началась разгрузка корабля \"%s\" с вместимостью \"%d\"\n", ship.shipType, ship.capacity)
 			for ship.capacity > 0 {
@@ -45,7 +48,6 @@ func main() {
 	}()
 
 	go func() {
-		defer wg.Done()
 		for ship := range bananaPier {
 			fmt.Printf("Началась разгрузка корабля \"%s\" с вместимостью \"%d\"\n", ship.shipType, ship.capacity)
 			for ship.capacity > 0 {
@@ -57,7 +59,6 @@ func main() {
 	}()
 
 	go func() {
-		defer wg.Done()
 		for ship := range clothesPier {
 			fmt.Printf("Началась разгрузка корабля \"%s\" с вместимостью \"%d\"\n", ship.shipType, ship.capacity)
 			for ship.capacity > 0 {
@@ -66,11 +67,6 @@ func main() {
 				fmt.Printf("Осталось \"%d\" у корабля \"%s\"\n", ship.capacity, ship.shipType)
 			}
 		}
-	}()
-
-	go func() {
-		wg.Wait()
-		close(tunnel)
 	}()
 
 	for i := range tunnel {
@@ -84,6 +80,10 @@ func main() {
 			clothesPier <- i
 		}
 	}
+
+	close(breadPier)
+	close(bananaPier)
+	close(clothesPier)
 }
 
 func createShips(shipType string) {
