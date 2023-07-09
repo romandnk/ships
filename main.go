@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -10,6 +11,12 @@ type Ship struct {
 	shipType string
 	capacity int
 }
+
+const (
+	bread   = "bread"
+	banana  = "banana"
+	clothes = "clothes"
+)
 
 var (
 	tunnel      = make(chan Ship, 5)
@@ -19,31 +26,37 @@ var (
 )
 
 func main() {
-	types := [3]string{"bread", "banana", "clothes"}
+	wg := sync.WaitGroup{}
+	types := [3]string{bread, banana, clothes}
 
+	wg.Add(len(types))
 	for _, shipType := range types {
 		go func(shipType string) {
+			defer wg.Done()
 			createShips(shipType)
 		}(shipType)
 	}
 
 	go pier(breadPier)
-
 	go pier(bananaPier)
-
 	go pier(clothesPier)
 
-	for i := range tunnel {
-		fmt.Printf("Новый корабль \"%s\" с вместимостью \"%d\"\n", i.shipType, i.capacity)
-		switch i.shipType {
-		case "bread":
-			breadPier <- i
-		case "banana":
-			bananaPier <- i
-		case "clothes":
-			clothesPier <- i
+	for ship := range tunnel {
+		fmt.Printf("Новый корабль \"%s\" с вместимостью \"%d\"\n", ship.shipType, ship.capacity)
+		switch ship.shipType {
+		case bread:
+			breadPier <- ship
+		case banana:
+			bananaPier <- ship
+		case clothes:
+			clothesPier <- ship
 		}
 	}
+
+	go func() {
+		wg.Wait()
+		close(tunnel)
+	}()
 
 	close(breadPier)
 	close(bananaPier)
@@ -52,7 +65,7 @@ func main() {
 
 func createShips(shipType string) {
 	arrCap := [...]int{10, 20, 30}
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 1; i++ {
 		idx := rand.Intn(3)
 		newShip := Ship{
 			shipType: shipType,
