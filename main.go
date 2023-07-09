@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"sync"
 	"time"
 )
 
@@ -20,21 +19,13 @@ var (
 )
 
 func main() {
-	wg := sync.WaitGroup{}
-
 	types := [3]string{"bread", "banana", "clothes"}
 
-	wg.Add(3)
 	for _, shipType := range types {
 		go func(shipType string) {
 			createShips(shipType)
 		}(shipType)
 	}
-
-	go func() {
-		wg.Wait()
-		close(tunnel)
-	}()
 
 	go pier(breadPier)
 
@@ -61,7 +52,7 @@ func main() {
 
 func createShips(shipType string) {
 	arrCap := [...]int{10, 20, 30}
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 2; i++ {
 		idx := rand.Intn(3)
 		newShip := Ship{
 			shipType: shipType,
