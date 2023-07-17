@@ -14,7 +14,7 @@ type Ship struct {
 
 const (
 	bread   = "bread"
-	banana  = "banana"
+	banana  = "bananas"
 	clothes = "clothes"
 )
 
@@ -23,19 +23,25 @@ var (
 	breadPier   = make(chan Ship)
 	bananaPier  = make(chan Ship)
 	clothesPier = make(chan Ship)
+	done        = make(chan struct{})
 )
 
 func main() {
 	wg := sync.WaitGroup{}
 	types := [3]string{bread, banana, clothes}
 
-	wg.Add(len(types))
+	wg.Add(3)
 	for _, shipType := range types {
 		go func(shipType string) {
 			defer wg.Done()
 			createShips(shipType)
 		}(shipType)
 	}
+
+	go func() {
+		wg.Wait()
+		close(tunnel)
+	}()
 
 	go pier(breadPier)
 	go pier(bananaPier)
@@ -53,20 +59,12 @@ func main() {
 		}
 	}
 
-	go func() {
-		wg.Wait()
-		close(tunnel)
-	}()
-
-	close(breadPier)
-	close(bananaPier)
-	close(clothesPier)
 }
 
 func createShips(shipType string) {
-	arrCap := [...]int{10, 20, 30}
-	for i := 0; i < 1; i++ {
-		idx := rand.Intn(3)
+	arrCap := [...]int{10}
+	for i := 0; i < 2; i++ {
+		idx := rand.Intn(1)
 		newShip := Ship{
 			shipType: shipType,
 			capacity: arrCap[idx],
